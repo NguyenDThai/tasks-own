@@ -19,7 +19,6 @@ import {
 } from "@dnd-kit/sortable";
 import { TaskType } from "@/types";
 import { TaskItem } from "./TaskItem";
-import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
 type TaskListProps = {
@@ -46,7 +45,8 @@ function Column({ id, title, tasks, onEditTask, onDeleteTask }: ColumnProps) {
     setMounted(true);
   }, []);
 
-  const translated = (key: string) => mounted ? t(key) : i18n.getResource("en", "common", key) || key;
+  const translated = (key: string) =>
+    mounted ? t(key) : i18n.getResource("en", "common", key) || key;
 
   return (
     <div className="flex flex-col bg-zinc-50/50 dark:bg-zinc-900/40 rounded-3xl p-5 min-h-[500px] border border-zinc-100 dark:border-zinc-800 backdrop-blur-sm">
@@ -83,7 +83,13 @@ function Column({ id, title, tasks, onEditTask, onDeleteTask }: ColumnProps) {
   );
 }
 
-export function TaskList({ tasks, onUpdateTask, onEditTask, onDeleteTask, setTasksLocally }: TaskListProps) {
+export function TaskList({
+  tasks,
+  onUpdateTask,
+  onEditTask,
+  onDeleteTask,
+  setTasksLocally,
+}: TaskListProps) {
   const { t, i18n } = useTranslation();
   const [mounted, setMounted] = useState(false);
 
@@ -91,7 +97,8 @@ export function TaskList({ tasks, onUpdateTask, onEditTask, onDeleteTask, setTas
     setMounted(true);
   }, []);
 
-  const translated = (key: string) => mounted ? t(key) : i18n.getResource("en", "common", key) || key;
+  const translated = (key: string) =>
+    mounted ? t(key) : i18n.getResource("en", "common", key) || key;
 
   const [activeTask, setActiveTask] = useState<TaskType | null>(null);
 
@@ -103,21 +110,24 @@ export function TaskList({ tasks, onUpdateTask, onEditTask, onDeleteTask, setTas
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const todoTasks = tasks.filter((t) => t.status === "TODO");
   const inProgressTasks = tasks.filter((t) => t.status === "IN_PROGRESS");
   const doneTasks = tasks.filter((t) => t.status === "DONE");
 
+  // Xử lý bắt đầu kéo tasks
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const task = tasks.find((t) => t._id === active.id);
     if (task) setActiveTask(task);
   };
 
+  // kiểm tra khi thả tasks và kết thúc
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+
     setActiveTask(null);
 
     if (!over) return;
@@ -126,11 +136,12 @@ export function TaskList({ tasks, onUpdateTask, onEditTask, onDeleteTask, setTas
     const overId = over.id as string;
 
     const activeTask = tasks.find((t) => t._id === activeId);
-    
-    const isOverAColumn = overId === "TODO" || overId === "IN_PROGRESS" || overId === "DONE";
-    
+
+    const isOverAColumn =
+      overId === "TODO" || overId === "IN_PROGRESS" || overId === "DONE";
+
     let newStatus = activeTask?.status;
-    
+
     if (isOverAColumn) {
       newStatus = overId as TaskType["status"];
     } else {
@@ -141,8 +152,10 @@ export function TaskList({ tasks, onUpdateTask, onEditTask, onDeleteTask, setTas
     }
 
     if (activeTask && newStatus && activeTask.status !== newStatus) {
-      setTasksLocally((prev) => 
-        prev.map((t) => t._id === activeId ? { ...t, status: newStatus as any } : t)
+      setTasksLocally((prev) =>
+        prev.map((t) =>
+          t._id === activeId ? { ...t, status: newStatus as any } : t,
+        ),
       );
       onUpdateTask(activeId, { status: newStatus as any });
     }
@@ -156,26 +169,26 @@ export function TaskList({ tasks, onUpdateTask, onEditTask, onDeleteTask, setTas
       onDragEnd={handleDragEnd}
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Column 
-          id="TODO" 
-          title={translated("todo")} 
-          tasks={todoTasks} 
-          onEditTask={onEditTask} 
-          onDeleteTask={onDeleteTask} 
+        <Column
+          id="TODO"
+          title={translated("todo")}
+          tasks={todoTasks}
+          onEditTask={onEditTask}
+          onDeleteTask={onDeleteTask}
         />
-        <Column 
-          id="IN_PROGRESS" 
-          title={translated("inProgress")} 
-          tasks={inProgressTasks} 
-          onEditTask={onEditTask} 
-          onDeleteTask={onDeleteTask} 
+        <Column
+          id="IN_PROGRESS"
+          title={translated("inProgress")}
+          tasks={inProgressTasks}
+          onEditTask={onEditTask}
+          onDeleteTask={onDeleteTask}
         />
-        <Column 
-          id="DONE" 
-          title={translated("done")} 
-          tasks={doneTasks} 
-          onEditTask={onEditTask} 
-          onDeleteTask={onDeleteTask} 
+        <Column
+          id="DONE"
+          title={translated("done")}
+          tasks={doneTasks}
+          onEditTask={onEditTask}
+          onDeleteTask={onDeleteTask}
         />
       </div>
 
