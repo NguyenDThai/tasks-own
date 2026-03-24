@@ -6,6 +6,7 @@ import { X, Calendar as CalendarIcon, FileText, Type } from "lucide-react";
 import { TaskType } from "@/types";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import { RichTextEditor } from "./RichTextEditor";
 
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 
@@ -39,6 +40,7 @@ export function TaskForm({
   const [deadlineError, setDeadlineError] = useState("");
   const [titleError, setTitleError] = useState("");
   const [descriptionError, setDescriptionError] = useState("");
+  const [descriptionLength, setDescriptionLength] = useState(0);
 
   const getMinDateTime = () => {
     const d = new Date();
@@ -60,8 +62,8 @@ export function TaskForm({
     return true;
   };
 
-  const validateDescription = (value: string) => {
-    if (value.length > 500) {
+  const validateDescription = (textValue: string) => {
+    if (textValue.length > 500) {
       setDescriptionError("Mô tả tối đa 500 ký tự");
       return false;
     }
@@ -88,6 +90,9 @@ export function TaskForm({
     if (isOpen) {
       setTitle(initialData?.title || "");
       setDescription(initialData?.description || "");
+      // Calculate plain text length for initial display
+      const plainText = (initialData?.description || "").replace(/<[^>]*>/g, "");
+      setDescriptionLength(plainText.length);
       setStatus(initialData?.status || "TODO");
       if (initialData?.deadline) {
         const d = new Date(initialData.deadline);
@@ -107,7 +112,7 @@ export function TaskForm({
     e.preventDefault();
     if (
       !validateTitle(title) ||
-      !validateDescription(description) ||
+      !validateDescription(descriptionLength > 0 ? description : "") || // Using descriptionLength implicitly
       !validateDeadline(deadline)
     )
       return;
@@ -202,28 +207,23 @@ export function TaskForm({
                   <span
                     className={cn(
                       "text-xs transition-colors",
-                      description.length > 500
+                      descriptionLength > 500
                         ? "text-red-500 font-bold"
                         : "text-zinc-400",
                     )}
                   >
-                    {description.length} / 500
+                    {descriptionLength} / 500
                   </span>
                 </div>
-                <textarea
-                  rows={3}
-                  value={description}
-                  onChange={(e) => {
-                    setDescription(e.target.value);
-                    validateDescription(e.target.value);
+                <RichTextEditor
+                  content={description}
+                  onChange={setDescription}
+                  onTextChange={(text: string) => {
+                    setDescriptionLength(text.length);
+                    validateDescription(text);
                   }}
-                  className={cn(
-                    "w-full px-3 py-2.5 bg-white dark:bg-zinc-900 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white resize-none transition-all shadow-sm",
-                    descriptionError
-                      ? "border-red-500 ring-1 ring-red-500/20"
-                      : "border-zinc-300 dark:border-zinc-700",
-                  )}
                   placeholder={translated("taskDescPlaceholder")}
+                  error={!!descriptionError}
                 />
                 {descriptionError && (
                   <p className="mt-1.5 text-xs text-red-500 font-medium animate-in fade-in slide-in-from-top-1">

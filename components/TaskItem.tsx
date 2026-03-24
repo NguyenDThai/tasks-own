@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { StatusSelect } from "./StatusSelect";
 import { toast } from "react-toastify";
+import DOMPurify from "dompurify";
 
 type TaskItemProps = {
   task: TaskType;
@@ -140,9 +141,10 @@ export function TaskItem({ task, onEdit, onDelete, onUpdateStatus }: TaskItemPro
               )}
             </h4>
             {task.description && (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">
-                {task.description}
-              </p>
+              <div 
+                className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 prose prose-sm dark:prose-invert max-w-none"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(task.description) }}
+              />
             )}
             {task.deadline && (
               <div
