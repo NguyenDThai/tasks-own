@@ -7,6 +7,7 @@ import { FilterBar } from "@/components/FilterBar";
 import { SearchInput } from "@/components/SearchInput";
 import { TaskList } from "@/components/TaskList";
 import { TaskForm } from "@/components/TaskForm";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { TaskType } from "@/types";
 import { Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -35,6 +36,11 @@ export default function Home() {
   const [currentFilter, setCurrentFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Confirmation Modal State
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [taskToDeleteId, setTaskToDeleteId] = useState<string | null>(null);
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
+
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
       const matchesFilter = currentFilter
@@ -58,6 +64,25 @@ export default function Home() {
   const handleOpenEditTask = (task: TaskType) => {
     setEditingTask(task);
     setIsFormOpen(true);
+  };
+
+  const handleOpenConfirmDelete = (id: string) => {
+    setTaskToDeleteId(id);
+    setIsConfirmModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!taskToDeleteId) return;
+    setIsDeleteLoading(true);
+    try {
+      await deleteTask(taskToDeleteId);
+      setIsConfirmModalOpen(false);
+    } catch (err) {
+      // Error handled in useTasks or should be handled here
+    } finally {
+      setIsDeleteLoading(false);
+      setTaskToDeleteId(null);
+    }
   };
 
   const handleSubmitTask = async (taskData: Partial<TaskType>) => {
@@ -131,7 +156,7 @@ export default function Home() {
           tasks={filteredTasks}
           onUpdateTask={updateTask}
           onEditTask={handleOpenEditTask}
-          onDeleteTask={deleteTask}
+          onDeleteTask={handleOpenConfirmDelete}
           setTasksLocally={setTasks}
         />
       )}
@@ -141,6 +166,13 @@ export default function Home() {
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleSubmitTask}
         initialData={editingTask}
+      />
+
+      <ConfirmModal
+        isOpen={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        loading={isDeleteLoading}
       />
     </div>
   );

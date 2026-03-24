@@ -58,7 +58,6 @@ export function useTasks() {
   };
 
   const deleteTask = async (id: string) => {
-    if (!confirm(t("confirmDelete"))) return;
     const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
     if (!res.ok) throw new Error(t("errorDelete"));
     setTasks((prev) => prev.filter((t) => t._id !== id));
