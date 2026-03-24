@@ -9,6 +9,20 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
     await dbConnect();
     const params = await props.params;
     const body = await req.json();
+    const title = body.title?.trim();
+    const description = body.description || "";
+
+    if (body.title !== undefined && !title) {
+      return NextResponse.json({ error: "Tiêu đề không được để trống" }, { status: 400 });
+    }
+
+    if (title && title.length > 100) {
+      return NextResponse.json({ error: "Tiêu đề tối đa 100 ký tự" }, { status: 400 });
+    }
+
+    if (description && description.length > 500) {
+      return NextResponse.json({ error: "Mô tả tối đa 500 ký tự" }, { status: 400 });
+    }
 
     if (body.deadline) {
       const deadlineDate = new Date(body.deadline);

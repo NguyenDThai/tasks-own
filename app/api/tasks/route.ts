@@ -26,8 +26,19 @@ export async function POST(req: NextRequest) {
   try {
     await dbConnect();
     const body = await req.json();
-    if (!body.title) {
-      return NextResponse.json({ error: "Title is required" }, { status: 400 });
+    const title = body.title?.trim();
+    const description = body.description || "";
+
+    if (!title) {
+      return NextResponse.json({ error: "Tiêu đề không được để trống" }, { status: 400 });
+    }
+    
+    if (title.length > 100) {
+      return NextResponse.json({ error: "Tiêu đề tối đa 100 ký tự" }, { status: 400 });
+    }
+
+    if (description.length > 500) {
+      return NextResponse.json({ error: "Mô tả tối đa 500 ký tự" }, { status: 400 });
     }
     
     if (body.deadline) {
