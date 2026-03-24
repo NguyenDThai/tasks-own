@@ -29,6 +29,14 @@ export async function POST(req: NextRequest) {
     if (!body.title) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
+    
+    if (body.deadline) {
+      const deadlineDate = new Date(body.deadline);
+      if (deadlineDate < new Date()) {
+        return NextResponse.json({ error: "Deadline phải lớn hơn thời gian hiện tại" }, { status: 400 });
+      }
+    }
+
     const task = await Task.create(body);
     return NextResponse.json(task, { status: 201 });
   } catch (error: any) {

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Calendar as CalendarIcon, FileText, Type } from "lucide-react";
 import { TaskType } from "@/types";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
 
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 
@@ -29,6 +30,28 @@ export function TaskForm({ isOpen, onClose, onSubmit, initialData }: TaskFormPro
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<TaskStatus>("TODO");
   const [deadline, setDeadline] = useState("");
+  const [deadlineError, setDeadlineError] = useState("");
+
+  const getMinDateTime = () => {
+    const d = new Date();
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const validateDeadline = (value: string) => {
+    if (!value) {
+      setDeadlineError("");
+      return true;
+    }
+    const selectedDate = new Date(value);
+    const now = new Date();
+    if (selectedDate < now) {
+      setDeadlineError("Deadline phải lớn hơn thời gian hiện tại");
+      return false;
+    }
+    setDeadlineError("");
+    return true;
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -43,12 +66,13 @@ export function TaskForm({ isOpen, onClose, onSubmit, initialData }: TaskFormPro
       } else {
         setDeadline("");
       }
+      setDeadlineError("");
     }
   }, [isOpen, initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || !validateDeadline(deadline)) return;
     
     onSubmit({
       title,
@@ -134,9 +158,23 @@ export function TaskForm({ isOpen, onClose, onSubmit, initialData }: TaskFormPro
                   <input
                     type="datetime-local"
                     value={deadline}
-                    onChange={(e) => setDeadline(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white shadow-sm"
+                    min={getMinDateTime()}
+                    onChange={(e) => {
+                      setDeadline(e.target.value);
+                      validateDeadline(e.target.value);
+                    }}
+                    className={cn(
+                      "w-full px-3 py-2.5 bg-white dark:bg-zinc-900 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white shadow-sm transition-all",
+                      deadlineError 
+                        ? "border-red-500 ring-1 ring-red-500/20" 
+                        : "border-zinc-300 dark:border-zinc-700"
+                    )}
                   />
+                  {deadlineError && (
+                    <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
+                      {deadlineError}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -150,7 +188,8 @@ export function TaskForm({ isOpen, onClose, onSubmit, initialData }: TaskFormPro
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl transition-colors shadow-sm"
+                  disabled={!!deadlineError}
+                  className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all shadow-sm transform active:scale-[0.98]"
                 >
                   {initialData ? translated("saveChanges") : translated("createTask")}
                 </button>

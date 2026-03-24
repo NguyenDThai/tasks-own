@@ -9,6 +9,14 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
     await dbConnect();
     const params = await props.params;
     const body = await req.json();
+
+    if (body.deadline) {
+      const deadlineDate = new Date(body.deadline);
+      if (deadlineDate < new Date()) {
+        return NextResponse.json({ error: "Deadline phải lớn hơn thời gian hiện tại" }, { status: 400 });
+      }
+    }
+
     const task = await Task.findByIdAndUpdate(params.id, body, { new: true, runValidators: true });
     if (!task) return NextResponse.json({ error: "Task not found" }, { status: 404 });
     return NextResponse.json(task, { status: 200 });
