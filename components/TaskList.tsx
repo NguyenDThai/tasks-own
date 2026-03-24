@@ -23,7 +23,7 @@ import { useTranslation } from "react-i18next";
 
 type TaskListProps = {
   tasks: TaskType[];
-  onUpdateTask: (id: string, updates: Partial<TaskType>) => void;
+  onUpdateTask: (id: string, updates: Partial<TaskType>) => Promise<void>;
   onEditTask: (task: TaskType) => void;
   onDeleteTask: (id: string) => void;
   setTasksLocally: React.Dispatch<React.SetStateAction<TaskType[]>>;
@@ -35,9 +35,10 @@ type ColumnProps = {
   tasks: TaskType[];
   onEditTask: (task: TaskType) => void;
   onDeleteTask: (id: string) => void;
+  onUpdateTask: (id: string, updates: Partial<TaskType>) => Promise<void>;
 };
 
-function Column({ id, title, tasks, onEditTask, onDeleteTask }: ColumnProps) {
+function Column({ id, title, tasks, onEditTask, onDeleteTask, onUpdateTask }: ColumnProps) {
   const { t, i18n } = useTranslation();
   const [mounted, setMounted] = useState(false);
 
@@ -70,6 +71,7 @@ function Column({ id, title, tasks, onEditTask, onDeleteTask }: ColumnProps) {
               task={task}
               onEdit={onEditTask}
               onDelete={onDeleteTask}
+              onUpdateStatus={(id, newStatus) => onUpdateTask(id, { status: newStatus })}
             />
           ))}
           {tasks.length === 0 && (
@@ -175,6 +177,7 @@ export function TaskList({
           tasks={todoTasks}
           onEditTask={onEditTask}
           onDeleteTask={onDeleteTask}
+          onUpdateTask={async (id, updates) => onUpdateTask(id, updates)}
         />
         <Column
           id="IN_PROGRESS"
@@ -182,6 +185,7 @@ export function TaskList({
           tasks={inProgressTasks}
           onEditTask={onEditTask}
           onDeleteTask={onDeleteTask}
+          onUpdateTask={async (id, updates) => onUpdateTask(id, updates)}
         />
         <Column
           id="DONE"
@@ -189,6 +193,7 @@ export function TaskList({
           tasks={doneTasks}
           onEditTask={onEditTask}
           onDeleteTask={onDeleteTask}
+          onUpdateTask={async (id, updates) => onUpdateTask(id, updates)}
         />
       </div>
 

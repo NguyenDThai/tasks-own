@@ -8,20 +8,35 @@ import { Calendar, Edit, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
+import { StatusSelect } from "./StatusSelect";
+import { toast } from "react-toastify";
 
 type TaskItemProps = {
   task: TaskType;
   onEdit: (task: TaskType) => void;
   onDelete: (id: string) => void;
+  onUpdateStatus?: (id: string, newStatus: TaskType["status"]) => Promise<void>;
 };
 
-export function TaskItem({ task, onEdit, onDelete }: TaskItemProps) {
+export function TaskItem({ task, onEdit, onDelete, onUpdateStatus }: TaskItemProps) {
   const { t, i18n } = useTranslation();
   const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [localStatus, setLocalStatus] = useState<TaskType["status"]>(task.status);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  // Update local status if prop changes
+  useEffect(() => {
+    setLocalStatus(task.status);
+  }, [task.status]);
 
   const translated = (key: string) =>
     mounted ? t(key) : i18n.getResource("en", "common", key) || key;
@@ -36,14 +51,32 @@ export function TaskItem({ task, onEdit, onDelete }: TaskItemProps) {
   } = useSortable({
     id: task._id,
     data: { type: "Task", task },
+    disabled: isMobile,
   });
+
+  const handleStatusChange = async (newStatus: TaskType["status"]) => {
+    if (!onUpdateStatus || newStatus === localStatus) return;
+
+    const previousStatus = localStatus;
+    setLocalStatus(newStatus);
+    setIsUpdating(true);
+
+    try {
+      await onUpdateStatus(task._id, newStatus);
+    } catch (error) {
+      setLocalStatus(previousStatus);
+      toast.error(t("errorUpdate") || "Failed to update status");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   const style = {
     transition,
     transform: CSS.Transform.toString(transform),
   };
 
-  const isCompleted = task.status === "DONE";
+  const isCompleted = localStatus === "DONE";
   // Tasks hết hạn
   let isOverdue = false;
   // Tasks gần hết hạn
@@ -76,10 +109,12 @@ export function TaskItem({ task, onEdit, onDelete }: TaskItemProps) {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
+      {...(isMobile ? {} : listeners)}
       className={cn(
         "group bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] border mb-3 transition-all hover:shadow-md select-none",
-        isDragging ? "cursor-grabbing scale-[1.02] shadow-xl z-50 ring-2 ring-blue-500/20" : "cursor-grab",
+        isDragging
+          ? "cursor-grabbing scale-[1.02] shadow-xl z-50 ring-2 ring-blue-500/20"
+          : isMobile ? "cursor-default" : "cursor-grab",
         isOverdue
           ? "border-red-300 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10"
           : "border-zinc-200 dark:border-zinc-800",
@@ -94,12 +129,15 @@ export function TaskItem({ task, onEdit, onDelete }: TaskItemProps) {
             <h4
               className={cn(
                 "text-base font-semibold truncate",
-                isCompleted
+                localStatus === "DONE"
                   ? "line-through text-zinc-500"
                   : "text-zinc-900 dark:text-zinc-100",
               )}
             >
               {task.title}
+              {isUpdating && (
+                <span className="ml-2 inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+              )}
             </h4>
             {task.description && (
               <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">
@@ -124,6 +162,12 @@ export function TaskItem({ task, onEdit, onDelete }: TaskItemProps) {
                 </span>
               </div>
             )}
+
+            <StatusSelect 
+              status={localStatus} 
+              onChange={handleStatusChange} 
+              disabled={isUpdating} 
+            />
           </div>
         </div>
         <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
