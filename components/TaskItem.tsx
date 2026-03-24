@@ -4,7 +4,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { TaskType } from "@/types";
 import { format, isPast, parseISO, differenceInHours } from "date-fns";
-import { Calendar, Edit, Trash2, GripVertical } from "lucide-react";
+import { Calendar, Edit, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
@@ -75,8 +75,11 @@ export function TaskItem({ task, onEdit, onDelete }: TaskItemProps) {
     <div
       ref={setNodeRef}
       style={style}
+      {...attributes}
+      {...listeners}
       className={cn(
-        "group bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] border mb-3 transition-all hover:shadow-md cursor-default",
+        "group bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] border mb-3 transition-all hover:shadow-md select-none",
+        isDragging ? "cursor-grabbing scale-[1.02] shadow-xl z-50 ring-2 ring-blue-500/20" : "cursor-grab",
         isOverdue
           ? "border-red-300 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10"
           : "border-zinc-200 dark:border-zinc-800",
@@ -86,14 +89,7 @@ export function TaskItem({ task, onEdit, onDelete }: TaskItemProps) {
       )}
     >
       <div className="flex items-start justify-between">
-        <div className="flex items-start space-x-3 w-full pr-2">
-          <button
-            {...attributes}
-            {...listeners}
-            className="mt-1 cursor-grab active:cursor-grabbing text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 touch-none"
-          >
-            <GripVertical className="w-5 h-5" />
-          </button>
+        <div className="flex items-start space-x-1 w-full pr-2">
           <div className="flex-1 w-full overflow-hidden">
             <h4
               className={cn(
@@ -132,13 +128,19 @@ export function TaskItem({ task, onEdit, onDelete }: TaskItemProps) {
         </div>
         <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           <button
-            onClick={() => onEdit(task)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(task);
+            }}
             className="p-1.5 text-zinc-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg cursor-pointer"
           >
             <Edit className="w-4 h-4" />
           </button>
           <button
-            onClick={() => onDelete(task._id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(task._id);
+            }}
             className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg cursor-pointer"
           >
             <Trash2 className="w-4 h-4" />
