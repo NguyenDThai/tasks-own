@@ -23,8 +23,32 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const storageKey = 'task-app-theme';
+                  const theme = localStorage.getItem(storageKey) || 'system';
+                  const root = document.documentElement;
+                  root.classList.remove('light', 'dark');
+                  
+                  if (theme === 'system') {
+                    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                    root.classList.add(systemTheme);
+                  } else {
+                    root.classList.add(theme);
+                  }
+                } catch (e) {}
+              })()
+            `,
+          }}
+        />
+      </head>
       <body className={cn(inter.className, "bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50 antialiased transition-colors duration-200")}>
         <ThemeProvider defaultTheme="system" storageKey="task-app-theme">
+
           <div className="min-h-screen flex flex-col">
             <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/75 dark:bg-zinc-950/75 border-b border-zinc-200 dark:border-zinc-800">
               <div className="container mx-auto px-4 h-16 flex items-center justify-between">

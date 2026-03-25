@@ -15,7 +15,8 @@ export function FilterBar({ currentFilter, onFilterChange }: FilterBarProps) {
     setMounted(true);
   }, []);
 
-  const translated = (key: string) => mounted ? t(key) : i18n.getResource("en", "common", key) || key;
+  const translated = (key: string) =>
+    mounted ? t(key) : i18n.getResource("en", "common", key) || key;
 
   const FILTERS = [
     { label: translated("allTasks"), value: "" },
@@ -34,7 +35,7 @@ export function FilterBar({ currentFilter, onFilterChange }: FilterBarProps) {
             "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
             currentFilter === f.value
               ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-md"
-              : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+              : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700",
           )}
         >
           {f.label}
