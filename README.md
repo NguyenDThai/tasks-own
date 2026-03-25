@@ -13,6 +13,8 @@
 * ✍️ Rich text editor cho mô tả (bold, italic, underline)
 * ⚠️ Validate form (title, description, deadline)
 * 🧩 Confirm modal khi xóa task
+* 🌍 Hỗ trợ đa ngôn ngữ (Tiếng Việt / English)
+* 🌑 Dark mode và Light mode
 
 ---
 
@@ -22,7 +24,7 @@
 * React + TypeScript
 * TailwindCSS
 * MongoDB
-* Mongoose (hoặc MongoDB Driver)
+* Mongoose
 * Framer Motion (animation)
 * Tiptap (rich text editor)
 * DnD Kit (drag & drop)
@@ -136,7 +138,6 @@ http://localhost:3000
 
 ## Tính năng cần cải thiện
 * Authentication (Login/Register)
-* Dark mode
 * Attach file vào task
 * Notification deadline
 * AI gợi ý task (nice-to-have 😄)
