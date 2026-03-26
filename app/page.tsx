@@ -118,19 +118,20 @@ export default function Home() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 slide-in-from-bottom-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-4 sm:space-y-8 animate-in fade-in duration-500 slide-in-from-bottom-4 pb-24 sm:pb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
             {translated("dashboard")}
           </h1>
-          <p className="text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-zinc-500 dark:text-zinc-400 mt-0.5 text-sm sm:text-base">
             {translated("subtitle")}
           </p>
         </div>
+        {/* Desktop button */}
         <button
           onClick={handleOpenNewTask}
-          className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl transition-all shadow-sm hover:shadow-md"
+          className="hidden sm:inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl transition-all shadow-sm hover:shadow-md"
         >
           <Plus className="w-5 h-5 mr-1.5 -ml-1" />
           {translated("newTask")}
@@ -139,7 +140,7 @@ export default function Home() {
 
       <StatsDashboard tasks={tasks} />
 
-      <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md p-4 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-[72px] z-30">
+      <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md px-3 py-2.5 sm:p-4 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sticky top-[56px] sm:top-[64px] z-30">
         <FilterBar
           currentFilter={currentFilter}
           onFilterChange={setCurrentFilter}
@@ -160,6 +161,15 @@ export default function Home() {
           setTasksLocally={setTasks}
         />
       )}
+
+      {/* Mobile FAB */}
+      <button
+        onClick={handleOpenNewTask}
+        className="fixed bottom-6 right-6 sm:hidden z-40 flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg shadow-blue-600/30 transition-all active:scale-95"
+        aria-label={translated("newTask")}
+      >
+        <Plus className="w-6 h-6" />
+      </button>
 
       <TaskForm
         isOpen={isFormOpen}

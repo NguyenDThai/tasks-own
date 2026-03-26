@@ -3,9 +3,18 @@ import { cookies } from "next/headers";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 import { verifyToken } from "@/lib/auth";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+      await dbConnect();
+      const user = await User.findById((session.user as any).id).select("-passwordHash");
+      if (user) return NextResponse.json({ user });
+    }
+
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 

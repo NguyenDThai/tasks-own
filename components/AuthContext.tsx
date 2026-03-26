@@ -3,10 +3,13 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { useSession, signIn, signOut, SessionProvider } from "next-auth/react";
+
 interface User {
   id: string;
   name: string;
   email: string;
+  provider?: string;
 }
 
 interface AuthContextType {
@@ -20,9 +23,18 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <SessionProvider>
+      <AuthContent>{children}</AuthContent>
+    </SessionProvider>
+  );
+}
+
+function AuthContent({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { data: session, status } = useSession();
 
   const checkAuth = async () => {
     try {
@@ -41,8 +53,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    checkAuth();
-  }, []);
+    if (status === "authenticated" && session?.user) {
+      setUser({
+        id: (session.user as any).id || "",
+        name: session.user.name || "",
+        email: session.user.email || "",
+        provider: "google",
+      });
+      setLoading(false);
+    } else if (status === "unauthenticated") {
+      checkAuth();
+    }
+  }, [session, status]);
 
   const login = (userData: User) => {
     setUser(userData);
@@ -51,6 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
+      if (status === "authenticated") {
+        await signOut({ redirect: false });
+      }
       await fetch("/api/auth/logout", { method: "POST" });
       setUser(null);
       router.push("/login");

@@ -129,7 +129,7 @@ export function TaskForm({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -138,16 +138,20 @@ export function TaskForm({
             className="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm"
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden z-10 border border-zinc-200 dark:border-zinc-800"
+            initial={{ opacity: 0, y: "100%" }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="w-full sm:max-w-md bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden z-10 border border-zinc-200 dark:border-zinc-800 max-h-[92dvh] flex flex-col"
           >
-            <div className="flex justify-between items-center p-6 border-b border-zinc-100 dark:border-zinc-800">
+            {/* Mobile drag handle */}
+            <div className="sm:hidden flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-600" />
+            </div>
+
+            <div className="flex justify-between items-center px-5 py-4 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
               <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                {initialData
-                  ? translated("editTask")
-                  : translated("createTask")}
+                {initialData ? translated("editTask") : translated("createTask")}
               </h2>
               <button
                 onClick={onClose}
@@ -157,7 +161,8 @@ export function TaskForm({
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden flex-1">
+              <div className="p-5 space-y-5 overflow-y-auto flex-1">
               <div>
                 <div className="flex justify-between items-center mb-1.5">
                   <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
@@ -277,12 +282,14 @@ export function TaskForm({
                   )}
                 </div>
               </div>
+              </div>
 
-              <div className="pt-6 flex justify-end space-x-3">
+              {/* Sticky footer */}
+              <div className="px-5 py-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-3 shrink-0 bg-white dark:bg-zinc-900">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-xl transition-colors"
+                  className="flex-1 sm:flex-none px-5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-xl transition-colors"
                 >
                   {translated("cancel")}
                 </button>
@@ -294,11 +301,9 @@ export function TaskForm({
                     !!descriptionError ||
                     !title.trim()
                   }
-                  className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all shadow-sm transform active:scale-[0.98]"
+                  className="flex-1 sm:flex-none px-5 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all shadow-sm transform active:scale-[0.98]"
                 >
-                  {initialData
-                    ? translated("saveChanges")
-                    : translated("createTask")}
+                  {initialData ? translated("saveChanges") : translated("createTask")}
                 </button>
               </div>
             </form>

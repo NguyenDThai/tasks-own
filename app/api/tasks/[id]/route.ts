@@ -6,7 +6,15 @@ import { verifyToken } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
 async function getUserId() {
+  const session = await getServerSession(authOptions);
+  if (session?.user) {
+    return (session.user as any).id || null;
+  }
+
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   if (!token) return null;
