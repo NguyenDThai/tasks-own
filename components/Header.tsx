@@ -2,25 +2,48 @@
 
 import { useState } from "react";
 import { CheckSquare, LogOut, User, Menu } from "lucide-react";
-import NotificationBell from "./NotificationBell";
+import NotificationBell, { INITIAL_NOTIFICATIONS } from "./NotificationBell";
+import NotificationBottomSheet from "./NotificationBottomSheet";
+import MobileMenu from "./MobileMenu";
 import ThemeToggle from "./ThemeToggle";
 import LanguageToggle from "./LanguageToggle";
-import MobileMenu from "./MobileMenu";
 import { useAuth } from "./AuthContext";
 import { useTranslation } from "react-i18next";
 import "@/lib/i18n";
+import { Notification } from "./NotificationItem";
 
 export default function Header() {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
-  const [menuOpen, setMenuOpen] = useState(false);
+
+  // ── Controlled state lives here ──────────────────────────────────────────
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [notifications, setNotifications] =
+    useState<Notification[]>(INITIAL_NOTIFICATIONS);
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const handleMarkAllRead = () =>
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+
+  const handleRead = (id: string) =>
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+    );
+
+  /** Open notification panel — always close menu first */
+  const openNotification = () => {
+    setIsMenuOpen(false);
+    setIsNotificationOpen((v) => !v);
+  };
 
   return (
     <>
       <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/75 dark:bg-zinc-950/75 border-b border-zinc-200 dark:border-zinc-800">
         <div className="container mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2">
 
-          {/* ── Logo ─────────────────────────────────────── */}
+          {/* ── Logo ──────────────────────────────────────────────────────── */}
           <div className="flex items-center space-x-2 shrink-0">
             <div className="p-1.5 sm:p-2 bg-blue-600 rounded-lg shadow-sm">
               <CheckSquare className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
@@ -30,11 +53,19 @@ export default function Header() {
             </h1>
           </div>
 
-          {/* ── Desktop right side (hidden on mobile) ────── */}
+          {/* ── Desktop right side (sm+) ───────────────────────────────── */}
           <div className="hidden sm:flex items-center gap-3 min-w-0">
             {user && (
               <div className="flex items-center gap-4 mr-2 pr-4 border-r border-zinc-200 dark:border-zinc-800 min-w-0">
-                <NotificationBell />
+                {/* Desktop: bell with dropdown */}
+                <NotificationBell
+                  isOpen={isNotificationOpen}
+                  onToggle={openNotification}
+                  notifications={notifications}
+                  onMarkAllRead={handleMarkAllRead}
+                  onRead={handleRead}
+                  showDropdown
+                />
 
                 {/* User info */}
                 <div className="flex items-center gap-1.5 text-sm font-medium text-zinc-600 dark:text-zinc-400 min-w-0">
@@ -51,9 +82,7 @@ export default function Header() {
                       </div>
                     )}
                   </div>
-                  <span className="truncate max-w-[120px] sm:max-w-none">
-                    {user.name}
-                  </span>
+                  <span className="truncate max-w-[120px] sm:max-w-none">{user.name}</span>
                 </div>
 
                 {/* Logout */}
@@ -71,25 +100,37 @@ export default function Header() {
             <ThemeToggle />
           </div>
 
-          {/* ── Mobile hamburger (hidden on sm+) ─────────── */}
+          {/* ── Mobile: hamburger only (< sm) ────────────────────────── */}
           <button
-            onClick={() => setMenuOpen(true)}
+            onClick={() => setIsMenuOpen(true)}
             aria-label="Open menu"
             className="sm:hidden p-2 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
           >
             <Menu className="w-5 h-5" />
           </button>
-
         </div>
       </header>
 
-      {/* ── Mobile slide-in drawer ────────────────────────── */}
+      {/* ── Mobile slide-in drawer ─────────────────────────────────────── */}
       <MobileMenu
-        isOpen={menuOpen}
-        onClose={() => setMenuOpen(false)}
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
         user={user}
         logout={logout}
+        unreadCount={unreadCount}
+        onOpenNotification={openNotification}
       />
+
+      {/* ── Mobile notification bottom sheet ──────────────────────────── */}
+      <div className="sm:hidden">
+        <NotificationBottomSheet
+          isOpen={isNotificationOpen}
+          onClose={() => setIsNotificationOpen(false)}
+          notifications={notifications}
+          onMarkAllRead={handleMarkAllRead}
+          onRead={handleRead}
+        />
+      </div>
     </>
   );
 }

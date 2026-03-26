@@ -2,8 +2,7 @@
 
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, LogOut, User } from "lucide-react";
-import NotificationBell from "./NotificationBell";
+import { X, LogOut, User, Bell } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import LanguageToggle from "./LanguageToggle";
 import { useTranslation } from "react-i18next";
@@ -13,6 +12,8 @@ interface MobileMenuProps {
   onClose: () => void;
   user: { name: string; provider?: string } | null;
   logout: () => void;
+  unreadCount: number;
+  onOpenNotification: () => void;
 }
 
 // Google G badge SVG extracted for reuse
@@ -46,6 +47,8 @@ export default function MobileMenu({
   onClose,
   user,
   logout,
+  unreadCount,
+  onOpenNotification,
 }: MobileMenuProps) {
   const { t } = useTranslation();
 
@@ -127,13 +130,23 @@ export default function MobileMenu({
                     </div>
                   </div>
 
-                  {/* Notifications inline */}
-                  <div className="flex items-center justify-between px-1">
+                  {/* Notifications row → opens bottom sheet */}
+                  <button
+                    onClick={onOpenNotification}
+                    className="flex items-center justify-between w-full px-1 py-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                  >
                     <span className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">
                       Notifications
                     </span>
-                    <NotificationBell />
-                  </div>
+                    <div className="relative">
+                      <Bell className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full leading-none">
+                          {unreadCount > 9 ? "9+" : unreadCount}
+                        </span>
+                      )}
+                    </div>
+                  </button>
 
                   <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
                 </div>
