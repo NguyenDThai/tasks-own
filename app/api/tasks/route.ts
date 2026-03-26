@@ -34,11 +34,14 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status");
     const search = searchParams.get("search");
 
-    const query: any = { userId };
+    // Return tasks where user is owner OR assigned as member
+    const query: any = { $or: [{ ownerId: userId }, { members: userId }] };
     if (status) query.status = status;
     if (search) query.title = { $regex: search, $options: "i" };
 
-    const tasks = await Task.find(query).sort({ createdAt: -1 });
+    const tasks = await Task.find(query)
+      .populate("members", "_id name email")
+      .sort({ createdAt: -1 });
     return NextResponse.json(tasks, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -76,8 +79,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const task = await Task.create({ ...body, userId });
-    return NextResponse.json(task, { status: 201 });
+    const task = await Task.create({ ...body, ownerId: userId, members: body.members ?? [] });
+    // Trả về task đã được populate members để UI hiển thị đúng ngay lập tức
+    const populatedTask = await Task.findById(task._id).populate("members", "_id name email");
+    return NextResponse.json(populatedTask, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

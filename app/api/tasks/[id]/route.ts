@@ -22,7 +22,10 @@ async function getUserId() {
   return decoded?.userId || null;
 }
 
-export async function PUT(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+export async function PUT(
+  req: NextRequest,
+  props: { params: Promise<{ id: string }> },
+) {
   try {
     const userId = await getUserId();
     if (!userId) {
@@ -31,43 +34,83 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
 
     await dbConnect();
     const params = await props.params;
+
+    // 1. Tìm task để kiểm tra quyền sở hữu
+    const task = await Task.findById(params.id);
+    if (!task) {
+      return NextResponse.json(
+        { error: "Task không tồn tại" },
+        { status: 404 },
+      );
+    }
+
+    // 2. Kiểm tra quyền: Owner hoặc Member mới được sửa task
+    const isOwner = task.ownerId.toString() === userId.toString();
+    const isMember = task.members.some(
+      (mId: any) => mId.toString() === userId.toString(),
+    );
+
+    if (!isOwner && !isMember) {
+      return NextResponse.json(
+        {
+          error:
+            "Bạn không có quyền chỉnh sửa task này. Chỉ chủ sở hữu hoặc thành viên mới có quyền sửa.",
+        },
+        { status: 403 },
+      );
+    }
+
     const body = await req.json();
     const title = body.title?.trim();
     const description = body.description || "";
 
     if (body.title !== undefined && !title) {
-      return NextResponse.json({ error: "Tiêu đề không được để trống" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Tiêu đề không được để trống" },
+        { status: 400 },
+      );
     }
 
     if (title && title.length > 100) {
-      return NextResponse.json({ error: "Tiêu đề tối đa 100 ký tự" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Tiêu đề tối đa 100 ký tự" },
+        { status: 400 },
+      );
     }
 
     if (description && description.length > 500) {
-      return NextResponse.json({ error: "Mô tả tối đa 500 ký tự" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Mô tả tối đa 500 ký tự" },
+        { status: 400 },
+      );
     }
 
     if (body.deadline) {
       const deadlineDate = new Date(body.deadline);
       if (deadlineDate < new Date()) {
-        return NextResponse.json({ error: "Deadline phải lớn hơn thời gian hiện tại" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Deadline phải lớn hơn thời gian hiện tại" },
+          { status: 400 },
+        );
       }
     }
 
-    const task = await Task.findOneAndUpdate(
-      { _id: params.id, userId },
-      body,
-      { new: true, runValidators: true }
-    );
-    
-    if (!task) return NextResponse.json({ error: "Task not found or unauthorized" }, { status: 404 });
-    return NextResponse.json(task, { status: 200 });
+    // 3. Thực hiện cập nhật
+    const updatedTask = await Task.findByIdAndUpdate(params.id, body, {
+      new: true,
+      runValidators: true,
+    }).populate("members", "_id name email");
+
+    return NextResponse.json(updatedTask, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-export async function DELETE(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  req: NextRequest,
+  props: { params: Promise<{ id: string }> },
+) {
   try {
     const userId = await getUserId();
     if (!userId) {
@@ -76,10 +119,35 @@ export async function DELETE(req: NextRequest, props: { params: Promise<{ id: st
 
     await dbConnect();
     const params = await props.params;
-    const task = await Task.findOneAndDelete({ _id: params.id, userId });
-    
-    if (!task) return NextResponse.json({ error: "Task not found or unauthorized" }, { status: 404 });
-    return NextResponse.json({ message: "Task deleted successfully" }, { status: 200 });
+
+    // 1. Tìm task đầu tiên để kiểm tra quyền sở hữu
+    const task = await Task.findById(params.id);
+
+    if (!task) {
+      return NextResponse.json(
+        { error: "Task không tồn tại" },
+        { status: 404 },
+      );
+    }
+
+    // 2. Kiểm tra ownership: Chỉ owner mới có quyền xóa task
+    if (task.ownerId.toString() !== userId.toString()) {
+      return NextResponse.json(
+        {
+          error:
+            "Bạn không có quyền xóa task này. Chỉ chủ sở hữu mới có quyền xóa.",
+        },
+        { status: 403 },
+      );
+    }
+
+    // 3. Thực hiện xóa
+    await Task.findByIdAndDelete(params.id);
+
+    return NextResponse.json(
+      { message: "Xóa task thành công" },
+      { status: 200 },
+    );
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

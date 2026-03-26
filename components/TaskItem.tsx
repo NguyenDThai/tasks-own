@@ -19,11 +19,18 @@ type TaskItemProps = {
   onUpdateStatus?: (id: string, newStatus: TaskType["status"]) => Promise<void>;
 };
 
-export function TaskItem({ task, onEdit, onDelete, onUpdateStatus }: TaskItemProps) {
+export function TaskItem({
+  task,
+  onEdit,
+  onDelete,
+  onUpdateStatus,
+}: TaskItemProps) {
   const { t, i18n } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [localStatus, setLocalStatus] = useState<TaskType["status"]>(task.status);
+  const [localStatus, setLocalStatus] = useState<TaskType["status"]>(
+    task.status,
+  );
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
@@ -115,7 +122,9 @@ export function TaskItem({ task, onEdit, onDelete, onUpdateStatus }: TaskItemPro
         "group bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] border mb-3 transition-all hover:shadow-md select-none",
         isDragging
           ? "cursor-grabbing scale-[1.02] shadow-xl z-50 ring-2 ring-blue-500/20"
-          : isMobile ? "cursor-default" : "cursor-grab",
+          : isMobile
+            ? "cursor-default"
+            : "cursor-grab",
         isOverdue
           ? "border-red-300 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10"
           : "border-zinc-200 dark:border-zinc-800",
@@ -141,9 +150,11 @@ export function TaskItem({ task, onEdit, onDelete, onUpdateStatus }: TaskItemPro
               )}
             </h4>
             {task.description && (
-              <div 
+              <div
                 className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 prose prose-sm dark:prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(task.description) }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(task.description),
+                }}
               />
             )}
             {task.deadline && (
@@ -165,13 +176,33 @@ export function TaskItem({ task, onEdit, onDelete, onUpdateStatus }: TaskItemPro
               </div>
             )}
 
-            <StatusSelect 
-              status={localStatus} 
-              onChange={handleStatusChange} 
-              disabled={isUpdating} 
+            <StatusSelect
+              status={localStatus}
+              onChange={handleStatusChange}
+              disabled={isUpdating}
             />
           </div>
         </div>
+
+        {/* Members Avatars (Compact) - Chỉ hiển thị tối đa 3 người */}
+        <div className="flex -space-x-1.5 ml-2 mr-2">
+          {task.members?.slice(0, 3).map((member) => (
+            <div
+              key={member._id}
+              title={member.name}
+              className="w-6 h-6 rounded-full border-2 border-white dark:border-zinc-900 bg-linear-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-[10px] font-bold text-white overflow-hidden shadow-sm"
+            >
+              {member.name.charAt(0).toUpperCase()}
+            </div>
+          ))}
+          {(task.members?.length || 0) > 3 && (
+            <div className="w-6 h-6 rounded-full border-2 border-white dark:border-zinc-900 bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[8px] font-bold text-zinc-500 shadow-sm">
+              +{(task.members?.length || 0) - 3}
+            </div>
+          )}
+        </div>
+
+        {/* Action tasks */}
         <div className="flex items-center space-x-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
           <button
             onClick={(e) => {

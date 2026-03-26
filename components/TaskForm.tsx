@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar as CalendarIcon, FileText, Type } from "lucide-react";
-import { TaskType } from "@/types";
+import { X, Calendar as CalendarIcon, FileText, Type, UserPlus, Users } from "lucide-react";
+import { TaskType, UserType } from "@/types";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { RichTextEditor } from "./RichTextEditor";
+import { UserSelector } from "./UserSelector";
 
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 
@@ -41,6 +42,7 @@ export function TaskForm({
   const [titleError, setTitleError] = useState("");
   const [descriptionError, setDescriptionError] = useState("");
   const [descriptionLength, setDescriptionLength] = useState(0);
+  const [members, setMembers] = useState<UserType[]>([]);
 
   const getMinDateTime = () => {
     const d = new Date();
@@ -102,6 +104,7 @@ export function TaskForm({
       } else {
         setDeadline("");
       }
+      setMembers(initialData?.members || []);
       setDeadlineError("");
       setTitleError("");
       setDescriptionError("");
@@ -122,6 +125,7 @@ export function TaskForm({
       description,
       status,
       deadline: deadline ? new Date(deadline).toISOString() : undefined,
+      members,
     });
     onClose();
   };
@@ -280,6 +284,59 @@ export function TaskForm({
                       {deadlineError}
                     </p>
                   )}
+                </div>
+              </div>
+
+              {/* Members Section */}
+              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
+                <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  <Users className="w-4 h-4 text-zinc-400" />{" "}
+                  {translated("members") || "Thành viên"}
+                </label>
+                
+                {/* Selected Members List */}
+                <div className="flex flex-wrap gap-2 min-h-[40px] px-1">
+                  {members.map((member) => (
+                    <motion.div 
+                      layout
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      key={member._id}
+                      className="flex items-center gap-2 pl-1 pr-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-full border border-blue-100 dark:border-blue-800/50 text-xs font-semibold shadow-xs"
+                    >
+                      <div className="w-5 h-5 rounded-full bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-[10px] text-white">
+                        {member.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="max-w-[100px] truncate">{member.name}</span>
+                      <button 
+                        type="button"
+                        onClick={() => setMembers(prev => prev.filter(m => m._id !== member._id))}
+                        className="hover:bg-blue-200/50 dark:hover:bg-blue-800/50 rounded-full p-0.5 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </motion.div>
+                  ))}
+                  {members.length === 0 && (
+                    <div className="w-full flex items-center justify-center py-2 border-2 border-dashed border-zinc-100 dark:border-zinc-800/50 rounded-xl">
+                      <p className="text-xs text-zinc-400 italic">Chưa có thành viên nào được gán</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="w-full">
+                  <UserSelector 
+                    selectedUserIds={members.map(m => m._id)}
+                    onSelectUser={(user) => {
+                      setMembers(prev => {
+                        if (prev.some(m => m._id === user._id)) {
+                          return prev.filter(m => m._id !== user._id);
+                        }
+                        return [...prev, user];
+                      });
+                    }}
+                    label={translated("addMember") || "Thêm thành viên"}
+                  />
                 </div>
               </div>
               </div>

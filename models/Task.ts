@@ -6,7 +6,10 @@ export interface ITask extends Document {
   title: string;
   description?: string;
   status: TaskStatus;
-  userId: mongoose.Types.ObjectId | string;
+  /** Creator / owner of the task */
+  ownerId: mongoose.Types.ObjectId;
+  /** Users assigned to this task */
+  members: mongoose.Types.ObjectId[];
   deadline?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -21,7 +24,8 @@ const TaskSchema: Schema = new Schema(
       enum: ["TODO", "IN_PROGRESS", "DONE"],
       default: "TODO",
     },
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    ownerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    members: { type: [Schema.Types.ObjectId], ref: "User", default: [] },
     deadline: { type: Date },
   },
   { timestamps: true }

@@ -74,6 +74,9 @@ const resources = {
       pleaseFillAll: "Please fill in all fields",
       passwordTooShort: "Password must be at least 6 characters",
       passwordsDontMatch: "Passwords don't match",
+      members: "Members",
+      addMember: "Add Member",
+      noMembers: "No members assigned",
     },
   },
   vi: {
@@ -147,6 +150,9 @@ const resources = {
       pleaseFillAll: "Vui lòng nhập đầy đủ thông tin",
       passwordTooShort: "Mật khẩu phải có ít nhất 6 ký tự",
       passwordsDontMatch: "Mật khẩu xác nhận không khớp",
+      members: "Thành viên",
+      addMember: "Thêm thành viên",
+      noMembers: "Chưa có thành viên nào được gán",
     },
   },
 };

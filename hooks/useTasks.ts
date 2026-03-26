@@ -5,13 +5,16 @@ import { TaskType } from "@/types";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import "@/lib/i18n";
+import { useNotifications } from "@/components/NotificationContext";
 
 export function useTasks() {
   const { t } = useTranslation();
+  const { addNotification } = useNotifications();
   const [tasks, setTasks] = useState<TaskType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Hàm load danh sách task
   const fetchTasks = useCallback(async (status?: string, search?: string) => {
     setLoading(true);
     try {
@@ -31,37 +34,90 @@ export function useTasks() {
     }
   }, []);
 
+  // Hàm tạo task
   const createTask = async (taskData: Partial<TaskType>) => {
-    const res = await fetch("/api/tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(taskData),
-    });
-    if (!res.ok) throw new Error(t("errorCreate"));
-    const newTask = await res.json();
-    setTasks((prev) => [newTask, ...prev]);
-    toast.success(t("taskCreated"));
-    return newTask;
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(taskData),
+      });
+
+      if (res.status === 401) {
+        throw new Error("Bạn chưa đăng nhập");
+      }
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || t("errorCreate"));
+      }
+
+      const newTask = data;
+      setTasks((prev) => [newTask, ...prev]);
+      toast.success(t("taskCreated"));
+      return newTask;
+    } catch (error: any) {
+      toast.error(error.message);
+      throw error;
+    }
   };
 
+  // Hàm cập nhật task
   const updateTask = async (id: string, taskData: Partial<TaskType>) => {
-    const res = await fetch(`/api/tasks/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(taskData),
-    });
-    if (!res.ok) throw new Error(t("errorUpdate"));
-    const updatedTask = await res.json();
-    setTasks((prev) => prev.map((t) => (t._id === id ? updatedTask : t)));
-    toast.success(t("taskUpdated"));
-    return updatedTask;
+    try {
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(taskData),
+      });
+
+      if (res.status === 401) {
+        throw new Error("Bạn chưa đăng nhập");
+      }
+
+      if (res.status === 403) {
+        throw new Error("Bạn không có quyền chỉnh sửa task này");
+      }
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || t("errorUpdate"));
+      }
+
+      const updatedTask = data;
+      setTasks((prev) => prev.map((t) => (t._id === id ? updatedTask : t)));
+      toast.success(t("taskUpdated"));
+      return updatedTask;
+    } catch (error: any) {
+      toast.error(error.message);
+      throw error;
+    }
   };
 
+  // Hàm xóa task
   const deleteTask = async (id: string) => {
-    const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
-    if (!res.ok) throw new Error(t("errorDelete"));
-    setTasks((prev) => prev.filter((t) => t._id !== id));
-    toast.success(t("taskDeleted"));
+    try {
+      const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
+
+      if (res.status === 403) {
+        throw new Error("Bạn không có quyền xóa task này");
+      }
+
+      if (res.status === 401) {
+        throw new Error("Bạn chưa đăng nhập");
+      }
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.error || t("errorDelete"));
+      }
+
+      setTasks((prev) => prev.filter((t) => t._id !== id));
+      toast.success(t("taskDeleted"));
+    } catch (error: any) {
+      toast.error(error.message);
+    }
   };
 
   useEffect(() => {
