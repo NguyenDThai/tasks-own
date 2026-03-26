@@ -6,6 +6,7 @@ export interface ITask extends Document {
   title: string;
   description?: string;
   status: TaskStatus;
+  userId: mongoose.Types.ObjectId | string;
   deadline?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -20,6 +21,7 @@ const TaskSchema: Schema = new Schema(
       enum: ["TODO", "IN_PROGRESS", "DONE"],
       default: "TODO",
     },
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     deadline: { type: Date },
   },
   { timestamps: true }
