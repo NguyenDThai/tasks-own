@@ -44,23 +44,41 @@ export async function PUT(
       );
     }
 
-    // 2. Kiểm tra quyền: Owner hoặc Member mới được sửa task
+    // 2. Kiểm tra quyền và phân loại hành động
     const isOwner = task.ownerId.toString() === userId.toString();
     const isMember = task.members.some(
       (mId: any) => mId.toString() === userId.toString(),
     );
 
+    const body = await req.json();
+
     if (!isOwner && !isMember) {
       return NextResponse.json(
-        {
-          error:
-            "Bạn không có quyền chỉnh sửa task này. Chỉ chủ sở hữu hoặc thành viên mới có quyền sửa.",
-        },
+        { error: "Bạn không có quyền chỉnh sửa task này." },
         { status: 403 },
       );
     }
 
-    const body = await req.json();
+    // Nếu là member nhưng không phải owner
+    if (!isOwner && isMember) {
+      // Chỉ cho phép update field "status", ignore các trường kỹ thuật id/_id
+      const updateFields = Object.keys(body).filter(
+        (key) => key !== "id" && key !== "_id" && key !== "__v",
+      );
+
+      const isOnlyStatus =
+        updateFields.length === 1 && updateFields[0] === "status";
+
+      if (!isOnlyStatus) {
+        return NextResponse.json(
+          {
+            error: `Thành viên chỉ có quyền cập nhật trạng thái (status). Không được phép sửa: ${updateFields.filter(f => f !== "status").join(", ")}`,
+          },
+          { status: 403 },
+        );
+      }
+    }
+
     const title = body.title?.trim();
     const description = body.description || "";
 
