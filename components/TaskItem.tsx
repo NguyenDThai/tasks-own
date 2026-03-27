@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { StatusSelect } from "./StatusSelect";
 import { toast } from "react-toastify";
 import DOMPurify from "dompurify";
+import { useAuth } from "@/components/AuthContext";
 
 type TaskItemProps = {
   task: TaskType;
@@ -26,12 +27,15 @@ export function TaskItem({
   onUpdateStatus,
 }: TaskItemProps) {
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [localStatus, setLocalStatus] = useState<TaskType["status"]>(
     task.status,
   );
   const [isUpdating, setIsUpdating] = useState(false);
+
+  const isOwner = user?.id === task.ownerId;
 
   useEffect(() => {
     setMounted(true);
@@ -59,7 +63,7 @@ export function TaskItem({
   } = useSortable({
     id: task._id,
     data: { type: "Task", task },
-    disabled: isMobile,
+    disabled: isMobile || !isOwner,
   });
 
   const handleStatusChange = async (newStatus: TaskType["status"]) => {
@@ -117,12 +121,12 @@ export function TaskItem({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...(isMobile ? {} : listeners)}
+      {...(isMobile || !isOwner ? {} : listeners)}
       className={cn(
         "group bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] border mb-3 transition-all hover:shadow-md select-none",
         isDragging
           ? "cursor-grabbing scale-[1.02] shadow-xl z-50 ring-2 ring-blue-500/20"
-          : isMobile
+          : isMobile || !isOwner
             ? "cursor-default"
             : "cursor-grab",
         isOverdue
@@ -209,19 +213,23 @@ export function TaskItem({
               e.stopPropagation();
               onEdit(task);
             }}
+            title={!isOwner ? "Xem chi tiết" : "Sửa"}
             className="p-1.5 text-zinc-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg cursor-pointer"
           >
             <Edit className="w-4 h-4" />
           </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(task._id);
-            }}
-            className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg cursor-pointer"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {isOwner && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(task._id);
+              }}
+              title="Xóa"
+              className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>

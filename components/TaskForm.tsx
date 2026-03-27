@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { RichTextEditor } from "./RichTextEditor";
 import { UserSelector } from "./UserSelector";
+import { useAuth } from "@/components/AuthContext";
 
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 
@@ -25,6 +26,7 @@ export function TaskForm({
   initialData,
 }: TaskFormProps) {
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -43,6 +45,8 @@ export function TaskForm({
   const [descriptionError, setDescriptionError] = useState("");
   const [descriptionLength, setDescriptionLength] = useState(0);
   const [members, setMembers] = useState<UserType[]>([]);
+
+  const isOwner = !initialData || user?.id === initialData.ownerId;
 
   const getMinDateTime = () => {
     const d = new Date();
@@ -155,7 +159,7 @@ export function TaskForm({
 
             <div className="flex justify-between items-center px-5 py-4 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
               <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                {initialData ? translated("editTask") : translated("createTask")}
+                {!isOwner ? translated("viewTask") || "Chi tiết nhiệm vụ" : (initialData ? translated("editTask") : translated("createTask"))}
               </h2>
               <button
                 onClick={onClose}
@@ -188,12 +192,14 @@ export function TaskForm({
                   type="text"
                   required
                   value={title}
+                  disabled={!isOwner}
                   onChange={(e) => {
                     setTitle(e.target.value);
                     validateTitle(e.target.value);
                   }}
                   className={cn(
-                    "w-full px-3 py-2.5 bg-white dark:bg-zinc-900 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all shadow-sm",
+                    "w-full px-3 py-2.5 bg-zinc-50 dark:bg-zinc-900 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white transition-all shadow-sm",
+                    !isOwner && "opacity-80 cursor-not-allowed bg-zinc-50 dark:bg-zinc-800/50",
                     titleError
                       ? "border-red-500 ring-1 ring-red-500/20"
                       : "border-zinc-300 dark:border-zinc-700",
@@ -224,6 +230,7 @@ export function TaskForm({
                     {descriptionLength} / 500
                   </span>
                 </div>
+                <div className={cn(!isOwner && "pointer-events-none opacity-80 cursor-not-allowed")}>
                 <RichTextEditor
                   content={description}
                   onChange={setDescription}
@@ -234,6 +241,7 @@ export function TaskForm({
                   placeholder={translated("taskDescPlaceholder")}
                   error={!!descriptionError}
                 />
+                </div>
                 {descriptionError && (
                   <p className="mt-1.5 text-xs text-red-500 font-medium animate-in fade-in slide-in-from-top-1">
                     {descriptionError}
@@ -249,7 +257,7 @@ export function TaskForm({
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value as TaskStatus)}
-                    className="w-full px-3 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white shadow-sm"
+                    className="w-full px-3 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white shadow-sm transition-all"
                   >
                     <option value="TODO">{translated("todo")}</option>
                     <option value="IN_PROGRESS">
@@ -268,12 +276,14 @@ export function TaskForm({
                     type="datetime-local"
                     value={deadline}
                     min={getMinDateTime()}
+                    disabled={!isOwner}
                     onChange={(e) => {
                       setDeadline(e.target.value);
                       validateDeadline(e.target.value);
                     }}
                     className={cn(
-                      "w-full px-3 py-2.5 bg-white dark:bg-zinc-900 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white shadow-sm transition-all",
+                      "w-full px-3 py-2.5 bg-zinc-50 dark:bg-zinc-900 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white shadow-sm transition-all",
+                      !isOwner && "opacity-80 cursor-not-allowed bg-zinc-50 dark:bg-zinc-800/50",
                       deadlineError
                         ? "border-red-500 ring-1 ring-red-500/20"
                         : "border-zinc-300 dark:border-zinc-700",
@@ -308,13 +318,15 @@ export function TaskForm({
                         {member.name.charAt(0).toUpperCase()}
                       </div>
                       <span className="max-w-[100px] truncate">{member.name}</span>
-                      <button 
-                        type="button"
-                        onClick={() => setMembers(prev => prev.filter(m => m._id !== member._id))}
-                        className="hover:bg-blue-200/50 dark:hover:bg-blue-800/50 rounded-full p-0.5 transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+                      {isOwner && (
+                        <button 
+                          type="button"
+                          onClick={() => setMembers(prev => prev.filter(m => m._id !== member._id))}
+                          className="hover:bg-blue-200/50 dark:hover:bg-blue-800/50 rounded-full p-0.5 transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
                     </motion.div>
                   ))}
                   {members.length === 0 && (
@@ -324,20 +336,22 @@ export function TaskForm({
                   )}
                 </div>
 
-                <div className="w-full">
-                  <UserSelector 
-                    selectedUserIds={members.map(m => m._id)}
-                    onSelectUser={(user) => {
-                      setMembers(prev => {
-                        if (prev.some(m => m._id === user._id)) {
-                          return prev.filter(m => m._id !== user._id);
-                        }
-                        return [...prev, user];
-                      });
-                    }}
-                    label={translated("addMember") || "Thêm thành viên"}
-                  />
-                </div>
+                {isOwner && (
+                  <div className="w-full">
+                    <UserSelector 
+                      selectedUserIds={members.map(m => m._id)}
+                      onSelectUser={(user) => {
+                        setMembers(prev => {
+                          if (prev.some(m => m._id === user._id)) {
+                            return prev.filter(m => m._id !== user._id);
+                          }
+                          return [...prev, user];
+                        });
+                      }}
+                      label={translated("addMember") || "Thêm thành viên"}
+                    />
+                  </div>
+                )}
               </div>
               </div>
 

@@ -60,23 +60,13 @@ export async function PUT(
     }
 
     // Nếu là member nhưng không phải owner
+    let updateData = body;
     if (!isOwner && isMember) {
-      // Chỉ cho phép update field "status", ignore các trường kỹ thuật id/_id
-      const updateFields = Object.keys(body).filter(
-        (key) => key !== "id" && key !== "_id" && key !== "__v",
-      );
+      // Thành viên chỉ được phép update "status"
+      updateData = { status: body.status };
 
-      const isOnlyStatus =
-        updateFields.length === 1 && updateFields[0] === "status";
-
-      if (!isOnlyStatus) {
-        return NextResponse.json(
-          {
-            error: `Thành viên chỉ có quyền cập nhật trạng thái (status). Không được phép sửa: ${updateFields.filter(f => f !== "status").join(", ")}`,
-          },
-          { status: 403 },
-        );
-      }
+      // Kiểm tra nếu người dùng thực sự cố gắng thay đổi các trường khác (không bắt buộc nhưng tốt cho feedback)
+      // Tuy nhiên, để đơn giản và tránh lỗi do frontend gửi thừa data, ta chỉ cần filter updateData.
     }
 
     const title = body.title?.trim();
@@ -114,7 +104,7 @@ export async function PUT(
     }
 
     // 3. Thực hiện cập nhật
-    const updatedTask = await Task.findByIdAndUpdate(params.id, body, {
+    const updatedTask = await Task.findByIdAndUpdate(params.id, updateData, {
       new: true,
       runValidators: true,
     }).populate("members", "_id name email");
