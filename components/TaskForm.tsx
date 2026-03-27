@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { RichTextEditor } from "./RichTextEditor";
 import { UserSelector } from "./UserSelector";
 import { useAuth } from "@/components/AuthContext";
+import { useLockBodyScroll } from "@/hooks/useLockBodyScroll";
 
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 
@@ -35,6 +36,8 @@ export function TaskForm({
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
+  
+  useLockBodyScroll(isOpen);
 
   useEffect(() => {
     setMounted(true);

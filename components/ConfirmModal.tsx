@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLockBodyScroll } from "@/hooks/useLockBodyScroll";
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -26,6 +27,8 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   cancelLabel = "Hủy",
   loading = false,
 }) => {
+  useLockBodyScroll(isOpen);
+
   // Handle ESC key
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -33,11 +36,9 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     };
     if (isOpen) {
       window.addEventListener("keydown", handleEsc);
-      document.body.style.overflow = "hidden"; // Prevent scroll when modal is open
     }
     return () => {
       window.removeEventListener("keydown", handleEsc);
-      document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose]);
 
