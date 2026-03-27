@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import dbConnect from "@/lib/mongodb";
 import Task from "@/models/Task";
+import Notification from "@/models/Notification";
 import { verifyToken } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -80,6 +81,22 @@ export async function POST(req: NextRequest) {
     }
 
     const task = await Task.create({ ...body, ownerId: userId, members: body.members ?? [] });
+
+    // Create notifications for members (excluding the creator)
+    if (body.members && body.members.length > 0) {
+      const assignedMembers = body.members.filter((id: string) => id.toString() !== userId.toString());
+      if (assignedMembers.length > 0) {
+        const notifications = assignedMembers.map((memberId: string) => ({
+          userId: memberId,
+          type: "TASK_ASSIGNED",
+          title: "Bạn được giao một nhiệm vụ mới",
+          message: `Bạn đã được thêm vào nhiệm vụ: ${title}`,
+          taskId: task._id
+        }));
+        await Notification.insertMany(notifications);
+      }
+    }
+
     // Trả về task đã được populate members để UI hiển thị đúng ngay lập tức
     const populatedTask = await Task.findById(task._id).populate("members", "_id name email");
     return NextResponse.json(populatedTask, { status: 201 });

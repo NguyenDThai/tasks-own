@@ -28,8 +28,12 @@ export default function Header() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   /** Open notification panel — always close menu first */
+  const { fetchNotifications } = useNotifications();
   const openNotification = () => {
     setIsMenuOpen(false);
+    if (!isNotificationOpen) {
+      fetchNotifications().catch(() => {});
+    }
     setIsNotificationOpen((v) => !v);
   };
 

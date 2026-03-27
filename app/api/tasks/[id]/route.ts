@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import dbConnect from "@/lib/mongodb";
 import Task from "@/models/Task";
+import Notification from "@/models/Notification";
 import { verifyToken } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -99,6 +100,29 @@ export async function PUT(
         return NextResponse.json(
           { error: "Deadline phải lớn hơn thời gian hiện tại" },
           { status: 400 },
+        );
+      }
+    }
+
+    // Identify new members being added to notify them
+    if (isOwner && body.members && Array.isArray(body.members)) {
+      const oldMemberIds = task.members.map((m: any) => m.toString());
+      const newMemberIds = body.members.filter(
+        (mId: string) =>
+          !oldMemberIds.includes(mId.toString()) &&
+          mId.toString() !== userId.toString(),
+      );
+
+      if (newMemberIds.length > 0) {
+        const notifications = newMemberIds.map((memberId: string) => ({
+          userId: memberId,
+          type: "TASK_ASSIGNED",
+          title: "Bạn được giao một nhiệm vụ mới",
+          message: `Bạn vừa được thêm vào nhiệm vụ: ${body.title || task.title}`,
+          taskId: task._id,
+        }));
+        await Notification.insertMany(notifications, { ordered: false }).catch(
+          () => {},
         );
       }
     }
